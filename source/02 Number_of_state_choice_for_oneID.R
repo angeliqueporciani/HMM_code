@@ -88,10 +88,7 @@ AICmodlist[[5]]
 # for this task I want to stock the lower AIC of each individuals in order to know if there is a difference between group for that. 
 # Then, I decide if I take 4 states for all individuals, even if for some individual, the 4 values of lambda for the 4 states has no sense in terms of activity levels.
 # maybe it could be a good Idea to stock for each individual the Par_0. 
-
-
-## This script could be, and should be, done for multiple individuals of the same physiological and food status. 
-# Indeed, the number of state detected could be linked to the physiological states or food. 
+# I tried to do automatisation, but I got problem for take back the information after the loop.
 
 ###############################################################################################
 ## 2. Automatisation of number of state choice for individuals of different conditions. 
