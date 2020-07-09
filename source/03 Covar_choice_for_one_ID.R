@@ -1,5 +1,8 @@
 ## 2. Model construction : choice of covariables. 
-# Working with the number 1 
+# this step allow to choose which covar need to be included in the model. For that, we need to adjust lot of model with different covar. 
+# The best will be done that with a loop of something and stock AIC of each model and the model with the lower AIC. 
+
+# Working with one mosquito 
 
 # load packages
 library(momentuHMM)

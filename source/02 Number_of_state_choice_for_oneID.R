@@ -12,15 +12,12 @@ library(setRNG)
 
 # load data
 
-data <- readRDS("./Projet Insemination/output/data_momentuHMM.rds")
+data <- readRDS("./Data/data_momentuHMM.rds")
 data$Day <- droplevels(data$Day)
 
 # Choose ID to work with. 
 
-# 1st method : if we already know with which individual we want to work.
-ID <- data[data$ID=="113",] 
-
-# 2nd method : random ID choice following his caracteristics 
+# random ID choice following his caracteristics 
 
 ID_sample <- function(data, food, status,Lstatus){
 x <- sample(unique(data$ID[data$Food==food & data$Status==status & data$Light_status==Lstatus]),1)
@@ -41,11 +38,17 @@ saveRDS(ID, paste0("./output/ID", unique(ID$ID),".rds"))
 # We start with minimal value and almost max of count data. 
 
 summary(ID$AC)# allows choose the initial parameters
+hist(ID$AC[ID$AC!=0], breaks = 35)
+summary(ID$AC[ID$AC!=0])
+q2 <- quantile(ID$AC[ID$AC!=0], 0.25)
+
+class(s1)
+s1[1]
 ## Try several values, the model is very sensitive to these initial values. 
-Par0_2s <-c(0.0001, 15)
-Par0_3s <-c(0.0001, 4, 15)
-Par0_4s <-c(0.0001, 4, 15, 20)
-Par0_5s <-c(0.0001, 5, 15, 20, 25)
+Par0_2s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.75))
+Par0_3s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.25), quantile(ID$AC[ID$AC!=0], 0.75))
+Par0_4s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.25), quantile(ID$AC[ID$AC!=0], 0.75), quantile(ID$AC[ID$AC!=0], 0.75)+5)
+Par0_5s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.25), quantile(ID$AC[ID$AC!=0], 0.75), quantile(ID$AC[ID$AC!=0], 0.75)+5, quantile(ID$AC[ID$AC!=0], 0.75)+10)
 Par_list <- list(NULL, Par0_2s, Par0_3s, Par0_4s, Par0_5s)
 
 #foreach (i = Par_list) %dorng%
@@ -82,6 +85,9 @@ AICmodlist[[4]]
 AICmodlist[[5]]
 
 # sometimes, HMM with five states has a lower AIC, but 5 states had no real biological interpretation as the difference between states is a lamba of 0.003 and 0.77 for instance. 
+# for this task I want to stock the lower AIC of each individuals in order to know if there is a difference between group for that. 
+# Then, I decide if I take 4 states for all individuals, even if for some individual, the 4 values of lambda for the 4 states has no sense in terms of activity levels.
+# maybe it could be a good Idea to stock for each individual the Par_0. 
 
 
 ## This script could be, and should be, done for multiple individuals of the same physiological and food status. 
@@ -127,6 +133,7 @@ stopImplicitCluster()
 
 # 2.3 Save AIC for each ind 
 saveRDS(AIC_list, "AIC_allID.rds")
+
 
 ## We need to attach metadata to AIC_list element in order to discriminate between each group. 
 ## We also need to find the number of state that give the lower AIC for each individuals. Maybe with sapply or lapply or tapply... 

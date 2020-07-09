@@ -17,9 +17,11 @@ library(tidyverse)
 
 mod <- readRDS("./output/modDC2423.rds")
 modnull <- readRDS("./output/modnull2_23.rds")
-
+mod <- modcos24_23
 ##use the stationnary fonction from momentuHMM for extracting stationnary probs
-sp <- stationary(model = mod, covs=data.frame(Hour=c(0:24)))
+sp <- stationary(mod)
+covs <- mod$rawCovs
+sp <- cbind(sp, covs)
 
 # 1. Frist strategy, for one individual. 
 
@@ -35,22 +37,24 @@ plot(sp[,4], type="l", ylim=c(0,1))
 
 ##ggplot for more comsetic figures
 ##transfo in DF for all the covariable factor
-sp_DF<- data.frame(sp)
 
-# Change the DF to have 2 columns, one sprobs and other states
-spDF2 <- gather(sp_DF, "States", "SP")
+spbis <- sp %>%
+  group_by(Hour)%>%
+  unique()
 
-# Add time variables 
-x <- 0:24
-spDF2$Time <- rep(x)##add to DF
+colnames(spbis) <- c("state1", "state2", "state3", "state4", "Hour")
+
+dfplot <- pivot_longer(spbis, cols = 1:4, names_to= "States", values_to = "Probs")
+
 
 # graph
-spplot<-ggplot(data=spDF2, aes(x=Time, y=SP,colour=States)) + 
+spplot<-ggplot(data=dfplot, aes(x=Hour, y=Probs ,colour=States)) + 
   geom_line()+theme_bw()+
-  labs(title=paste0("Stationnary probabilities of ID",unique(mod_DC$data$ID),"(",unique(mod_DC$data$Food),"_",unique(mod_DC$data$Status),")"), x="Time (h)", y="Probabilities")+
+  labs(title=paste0("Stationnary probabilities of ID",unique(mod$data$ID),"(",unique(mod$data$Food),"_",unique(mod$data$Status),")"), x="Time (h)", y="Probabilities")+
   theme(plot.title=element_text(hjust = 0.5))+ scale_x_continuous(breaks=c(0,2,4,6, 8, 10, 12, 14,16, 18, 20, 22, 24))
 
 spplot
+
 # save the result
 ggsave(paste0("./img/Stationnary probs/ID",unique(mod$data$ID),".pdf"))
 ## we need to remind : (and maybe include that in graphic)
