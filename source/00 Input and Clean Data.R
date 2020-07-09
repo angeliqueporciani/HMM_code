@@ -10,7 +10,7 @@ library(readxl)
 
 # Input LAM data
 
-path <- "./Data/Raw_data/"
+path <- "./Data/Raw_data /"
 
 R02M01 <- load.LAM(file = paste0(path, "R02M01.txt"), name = "R02M01")
 R02M02 <- load.LAM(file = paste0(path, "R02M02.txt"), name = "R02M02")
@@ -37,11 +37,11 @@ saveRDS(object = Metadata, file = paste0(path, "Metadata.rds"))
 
 ## Consolidate LAM data with Metadata
 
-source("./src/fun/consolidate.LAMs.R") # this function will be included in 'abcdee' in due course
+source("./function/consolidate.LAMs.R") # this function will be included in 'abcdee' in due course
 
 activity <- consolidate.LAMs(LAMs, Metadata)
 
-source("./src/fun/xtsList2df.R")  # this function will be included in 'abcdee' in due course
+source("./function/xtsList2df.R")  # this function will be included in 'abcdee' in due course
 
 activityDF <- xtsList2df(activity)
 

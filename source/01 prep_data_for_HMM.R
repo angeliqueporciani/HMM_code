@@ -5,54 +5,47 @@
 library(momentuHMM)
 library(forcats)
 library(tidyverse)
+library(xts)
+library(lubridate)
 
-# load consolidated list 
-source("./source/00 Input and Clean Data.R")
+# load data as dataframe (created by script )
+# DF
+activityDF <- readRDS("./Data/ActivityDF.rds")
 
-##Elimination des control
-actif <- Filter(function(x) attr(x, which = "Status", exact = TRUE) !="Control", activity)
-length(actif)##control bien eliminé
+# source("./source/00 Input and Clean Data.R")Script source pour la création des data. Pas besoin de le charger à chaque fois. 
+
+# Préparation des data pour HMM (compatible momentuHMM)
+
+## Deleting control 
+
+activityDF <- subset(activityDF, Status!="Control")
+
+## Add Hour and Day 
+
+activityDF$Hour <-hour(activityDF$Time) 
+activityDF$Day <-day(activityDF$Time) 
+
+## Add AC (correspond to Activity but in HMM I used AC as notation)
+
+activityDF$AC <- activityDF$Activity
+
+## add ID colums for individual notation
+
+activityDF$ID <- as.factor(paste0(activityDF$Monitor, activityDF$Channel))
 
 # creation of a list of dataframe with metadata, take care of the object class, the following part works with "tbl_df" format
-
-activity2 <- list()
-for (i in 1:length(actif))
-{
-  activity2[[i]] <- data.frame(AC=as.integer(actif[[i]][,1]), Food=rep(xtsAttributes(actif[[i]])$Food), 
-                                Status=rep(xtsAttributes(actif[[i]])$Status),
-                                Monitor=rep(xtsAttributes(actif[[i]])$Monitor),
-                                Time=index(actif[[i]]), 
-                                Channel=rep(xtsAttributes(actif[[i]])$Channel),
-                                ID= rep(i),
-                                Winglength=rep(xtsAttributes(actif[[i]])$Wing_length),
-                                LightStatus=rep(xtsAttributes(actif[[i]])$Light_status),
-                                Hour=as.integer(strftime(index(actif[[i]]), format = "%H", tz="")),
-                                Day=as.character(strftime(index(actif[[i]]), format = "%d", tz="")))
-}
-
-
-#creation of a dataframe
-activityDF <- data.frame()
-for (i in 1:length(activity2))
-{
-  activityDF <- rbind(activityDF,activity2[[i]])
-}
 
 # creation of a momentuHMM object (big dataframe) for HMM
 data <- prepData(activityDF, coordNames = NULL)
 data <- data[(data['Time'] > '2018-10-28 05:59:00'),]#substracting the first day. 
 data$Day <- factor(data$Day)
-data$Day <- fct_relevel(data$Day, "28", "29", "30", "31", "01", "02", "03")#sort days in real time scale (end of a month and a begining of the other)
-saveRDS(object = data, file = "./output/data_momentuHMM.rds")
+data$Day <- fct_relevel(data$Day, "28", "29", "30", "31", "1", "2", "3")#sort days in real time scale (end of a month and a begining of the other)
 
-# creation of a list 
-data.ind <- vector("list", 200)
-for (i in 1:200){
-  data.ind[[i]] <- data[data$ID==i,]
-}
-saveRDS(object = data.ind, file = "./output/data.ind.rds")
+saveRDS(object = data, file = "./Data/data_momentuHMM.rds")
 
-# Clean .GlobalEnv
-rm(actif)
-rm(activity2)# reload data.ind instead of activity2 name. 
-rm(activityDF)
+# creation of a list could be useful for some action later
+
+data.ind <- split(data, data$ID)
+
+saveRDS(object = data.ind, file = "./Data/data.ind.rds")
+
