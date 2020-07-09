@@ -5,13 +5,16 @@
 library(momentuHMM)
 library(forcats)
 library(tidyverse)
+
 # load consolidated list 
-source("./src/00 Input and Clean Data.R")
+source("./source/00 Input and Clean Data.R")
+
 ##Elimination des control
 actif <- Filter(function(x) attr(x, which = "Status", exact = TRUE) !="Control", activity)
 length(actif)##control bien eliminé
 
 # creation of a list of dataframe with metadata, take care of the object class, the following part works with "tbl_df" format
+
 activity2 <- list()
 for (i in 1:length(actif))
 {
