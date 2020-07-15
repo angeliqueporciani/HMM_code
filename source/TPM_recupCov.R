@@ -10,21 +10,22 @@
 #@cosinorCos et cosinorSin (fonction plot_recup)
 #@fonctionXBloop et is.formula
 #@newFormulas
-setwd("~/Dropbox/SHARES/Share with Angelique Amadou/Projet Insemination/")
-source("./src/fonction_tpm/delta_bc.R")
-source("./src/fonction_tpm/fonction_is_and_XBloop.R")
-source("./src/fonction_tpm/cosinor.R")
-source("./src/fonction_tpm/stateFormulas.R")
-source("./src/fonction_tpm/newFormulas.R")
-source("./src/fonction_tpm/getSplineFormula.R")
-source("./src/fonction_tpm/getXB.R")
-source("./src/fonction_tpm/fonction_w2n_et_autre.R")
-source("./src/fonction_tpm/trMatrix_rcpp.R")
+source("./function/fonction_tpm/delta_bc.R")
+source("./function/fonction_tpm/fonction_is_and_XBloop.R")
+source("./function/fonction_tpm/cosinor.R")
+source("./function/fonction_tpm/stateFormulas.R")
+source("./function/fonction_tpm/newFormulas.R")
+source("./function/fonction_tpm/getSplineFormula.R")
+source("./function/fonction_tpm/getXB.R")
+source("./function/fonction_tpm/fonction_w2n_et_autre.R")
+source("./function/fonction_tpm/trMatrix_rcpp.R")
+library(momentuHMM)
 
 splineList<-c("bs","ns","bSpline","mSpline","cSpline","iSpline")
 meansList<-c("matrix","numeric","integer","logical","Date","POSIXlt","POSIXct","difftime")
 
 ##transfo du modèle
+m <- modDC2434
 m <- readRDS("./output/modC_1_SLD.rds")
 m <- delta_bc(m)
 
@@ -35,9 +36,13 @@ m <- delta_bc(m)
 ##memo: faire une fonction
 ID <- unique(m$data$ID)
 nbStates <- length(m$stateNames)
+F <- unique(m$data$Food)
+S <- unique(m$data$Status)
+
 
 ##creation covs
-covs=data.frame(Status="virgin")##à changer en fontion des la cov qu'on veut pour les tpm 
+covs=data.frame(Status="Virgin")##à changer en fontion des la cov qu'on veut pour les tpm 
+
 
 if(!is.data.frame(covs)) stop('covs must be a data frame')
 if(nrow(covs)>1) stop('covs must consist of a single row')
@@ -74,13 +79,13 @@ if(nrow(beta)>1) {
   
   # values of each covariate
   rawCovs <- m$rawCovs[which(m$data$ID %in% ID),,drop=FALSE]
-  #if(is.null(covs)) {
-  #  rawCovs <- m$rawCovs
-  #  meanCovs <- colSums(rawCovs)/nrow(rawCovs)
-  #} else {
-  #  rawCovs <- m$data[,names(covs),drop=FALSE]
-  #  meanCovs <- as.numeric(covs)
-  #}
+  if(is.null(covs)) {
+    rawCovs <- m$rawCovs
+    meanCovs <- colSums(rawCovs)/nrow(rawCovs)
+  } else {
+    rawCovs <- m$data[,names(covs),drop=FALSE]
+    meanCovs <- as.numeric(covs)
+  }
   
   for(cov in 1:ncol(rawCovs)) {
     
@@ -144,17 +149,17 @@ trMat[1,1,]
 
 ##1. pour chaque status(vierge/inseminé) stocker la trMat dans un array identifié
 ###a.virgin
-virgintpm <- trMat 
+tpm <- trMat 
 
 ##b.inseminated
 inseminatedtpm <- trMat
 
 ##changement des dimension des matrices pour avoir un dataframe de toute les proba en fonction de l'heure pour une transition 
 ##virgin
-dim(virgintpm) <- c(nbStates*nbStates, length(tempCovs[,cov]))
-virgintpm <- t(virgintpm)
-DF_VtrMat <- data.frame(virgintpm)
-colnames(DF_VtrMat) <- c("1 -> 1","1 -> 2",
+dim(tpm) <- c(nbStates*nbStates, length(tempCovs[,cov]))
+tpm <- t(tpm)
+DF_trMat <- data.frame(tpm)
+colnames(DF_trMat) <- c("1 -> 1","1 -> 2",
                          "1 -> 3",
                          "1 -> 4",
                          "2 -> 1",
@@ -170,8 +175,8 @@ colnames(DF_VtrMat) <- c("1 -> 1","1 -> 2",
                          "4 -> 3",
                          "4 -> 4")
 
-DF_VtrMat$status <- rep("virgin")
-DF_VtrMat$hour <- tempCovs[,cov]
+DF_trMat$status <- rep("virgin")
+DF_trMat$hour <- tempCovs[,cov]
 
 ##inseminated
 dim(inseminatedtpm) <- c(nbStates*nbStates, length(tempCovs[,cov]))
@@ -204,15 +209,16 @@ dim(DF_tpm)
 ###Plot en png#########
 #######################
 #stockage dans le repertoire courant
+library(ggplot2)
 
 for (i in 1:(nbStates*nbStates)){
-  png(file = paste0("switching_state", i, ".png")) 
-  p <- ggplot(data=DF_tpm, aes(x=hour, y= DF_tpm[,i],colour=status)) + geom_line()+theme_bw()+
-    labs(title=names(DF_tpm[i]), x="Time (h)", y="Probability")+
+  #png(file = paste0("switching_state", i, ".png")) 
+  p <- ggplot(data=DF_tpm, aes(x=hour, y= DF_tpm[,1],colour=status)) + geom_line()+theme_bw()+
+    labs(title=names(DF_tpm[1]), x="Time (h)", y="Probability")+
     theme(plot.title=element_text(hjust = 0.5,size=10))+
     scale_x_continuous(breaks=c(0,2,4,6, 8, 10, 12, 14,16, 18, 20, 22, 24))
   print(p)
-  dev.off()
+  #dev.off()
 }
 
 
@@ -240,3 +246,5 @@ lines(tempCovs[,cov], virgintpm[,15], col = "blue")
 lines(tempCovs[,cov], virgintpm[,16], col = "red")
 
 par(mfrow = c(1,1))
+
+trProbsSE_10 <- getTrProbs(m, formula=m$conditions$formula)
