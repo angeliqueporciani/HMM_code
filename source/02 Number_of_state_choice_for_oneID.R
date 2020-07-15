@@ -94,7 +94,7 @@ AICmodlist[[5]]
 ## 2. Automatisation of number of state choice for individuals of different conditions. 
 ###############################################################################################
 # 2.1 load data
-data.ind<- readRDS("./output/data.ind.rds")
+data.ind<- readRDS("./Data/data.ind.rds")
  
 # 2.2 Loop for all individuals of a subset (adapted from the previous loop): stock of AIC for each individuals in a list ? 
 Par0_2s <-c(0.0001, 35)
@@ -107,6 +107,13 @@ delta0= rep(1.e-100,4)
 AIC_list <- vector("list", length(data.ind))
 
 for (j in 1:length(data.ind))
+  ID <- data.ind[[j]]
+
+  Par0_2s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.75))
+  Par0_3s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.25), quantile(ID$AC[ID$AC!=0], 0.75))
+  Par0_4s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.25), quantile(ID$AC[ID$AC!=0], 0.75), quantile(ID$AC[ID$AC!=0], 0.75)+5)
+  Par0_5s <-c(0.0001, quantile(ID$AC[ID$AC!=0], 0.25), quantile(ID$AC[ID$AC!=0], 0.75), quantile(ID$AC[ID$AC!=0], 0.75)+5, quantile(ID$AC[ID$AC!=0], 0.75)+10)
+  Par_list <- list(NULL, Par0_2s, Par0_3s, Par0_4s, Par0_5s)
   {      
   AIC <- matrix(0, 5,2)
     foreach (i = 2:5) %dorng%
@@ -124,9 +131,16 @@ for (j in 1:length(data.ind))
             AIC[i,2] <- i
       }
   AIC_list[[j]] <- AIC
+  attributes(AIC_list[[j]]) <- data.ind[[j]][1,c(1,5,6,7)]
+  AIC_DF <- cbind.data.frame(attributes(AIC_list[[j]]), AIC=AIC_list[[j]][1:5], States=AIC_list[[j]][6:10]) 
   }
+  stopImplicitCluster()
+  
+# regrouper tout les AIC de tous les ID dans un meme DF
+do.call(rbind, AIC_list)
 
-stopImplicitCluster()
+# travailler sur ce gros DF pour savoir si ya une relation entre nombre d'état et groupe. 
+
 
 # 2.3 Save AIC for each ind 
 saveRDS(AIC_list, "AIC_allID.rds")
