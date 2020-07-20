@@ -151,6 +151,9 @@ AIC1 <- AIC(mod.null2, mod_lambda, mod_cos, mod_cos12, mod_cos8, mod_DC, mod_DC1
             mod_2DC, mod_2DCb)
 saveRDS(AIC1, paste0("./output/AICmod_",unique(ID$ID),".rds"))
 
+n <- AIC1$Model[which.min(AIC1$AIC)]
+n# nom du modèle qu'on reprendra pour la suite 
+AIC(n)
 # We take the model with the lowest AIC to adjust different harmonics. 
 
 # harmonics
